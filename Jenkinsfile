@@ -6,7 +6,6 @@ pipeline {
     }
 
     stages {
-
         // CI Start
         stage('Build') {
             steps {
@@ -14,7 +13,6 @@ pipeline {
                 sh 'mvn package'
             }
         }
-
 
         stage("SonarQube analysis") {
             agent any
@@ -39,9 +37,8 @@ pipeline {
                         timeout(time: 10, unit: 'MINUTES') {
                             waitForQualityGate abortPipeline: true
                         }
-                    }
-                    catch (Exception ex) {
-
+                    } catch (Exception ex) {
+                        // Handle exception if needed
                     }
                 }
             }
@@ -50,8 +47,7 @@ pipeline {
         stage('Push') {
             steps {
                 echo 'Push'
-
-              //  sh "aws s3 cp target/sample-1.0.3.jar s3://bucket001306"
+                sh "aws s3 cp target/sample-1.0.3.jar s3://bucket001306"
             }
         }
 
@@ -61,30 +57,24 @@ pipeline {
 
         stage('Deployments') {
             parallel {
-
                 stage('Deploy to Dev') {
                     steps {
-                        echo 'Build'
-
-                        //sh "aws lambda update-function-code --function-name $function_name --region us-west-1 --s3-bucket bucket001306 --s3-key sample-1.0.3.jar"
+                        echo 'Deploy to Dev'
+                        sh "aws lambda update-function-code --function-name $function_name --region us-west-1 --s3-bucket bucket001306 --s3-key sample-1.0.3.jar"
                     }
                 }
 
-                stage('Deploy to test ') {
+                stage('Deploy to test') {
                     when {
                         branch 'main'
                     }
                     steps {
-                        echo 'Build'
-
-                        // sh "aws lambda update-function-code --function-name $function_name --region us-west-1 --s3-bucket bucket001306 --s3-key sample-1.0.3.jar"
+                        echo 'Deploy to test'
+                        sh "aws lambda update-function-code --function-name $function_name --region us-west-1 --s3-bucket bucket001306 --s3-key sample-1.0.3.jar"
                     }
                 }
             }
         }
-
-
-        
 
         // CD Ended
     }
