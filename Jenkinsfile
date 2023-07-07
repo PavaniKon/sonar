@@ -6,11 +6,10 @@ pipeline {
     }
 
     stages {
-        // CI Start
         stage('Build') {
             steps {
                 echo 'Build'
-                sh 'mvn package'
+                sh 'mvn clean package'
             }
         }
 
@@ -24,8 +23,10 @@ pipeline {
                 }
             }
             steps {
-                withSonarQubeEnv('Sonar') {
-                    sh 'mvn sonar:sonar'
+                script {
+                    withSonarQubeEnv('Sonar') {
+                        sh 'mvn sonar:sonar'
+                    }
                 }
             }
         }
@@ -51,31 +52,9 @@ pipeline {
             }
         }
 
-        // Ci Ended
-
-        // CD Started
-
         stage('Deployments') {
             parallel {
                 stage('Deploy to Dev') {
                     steps {
                         echo 'Deploy to Dev'
-                        sh "aws lambda update-function-code --function-name $function_name --region us-west-1 --s3-bucket bucket001306 --s3-key sample-1.0.3.jar"
-                    }
-                }
-
-                stage('Deploy to test') {
-                    when {
-                        branch 'main'
-                    }
-                    steps {
-                        echo 'Deploy to test'
-                        sh "aws lambda update-function-code --function-name $function_name --region us-west-1 --s3-bucket bucket001306 --s3-key sample-1.0.3.jar"
-                    }
-                }
-            }
-        }
-
-        // CD Ended
-    }
-}
+                        sh "aws lambda update-function-code --
