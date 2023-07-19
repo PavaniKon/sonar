@@ -2,16 +2,19 @@ pipeline {
     agent any
 
     environment {
-        function_name = 'functionforjava'
+        function_name = 'java-sample'
     }
 
     stages {
+
+        // CI Start
         stage('Build') {
             steps {
                 echo 'Build'
-                sh 'mvn clean package'
+                sh 'mvn package'
             }
         }
+
 
         stage("SonarQube analysis") {
             agent any
@@ -23,10 +26,8 @@ pipeline {
                 }
             }
             steps {
-                script {
-                    withSonarQubeEnv('Sonar') {
-                        sh 'mvn sonar:sonar'
-                    }
+                withSonarQubeEnv('Sonar') {
+                    sh 'mvn sonar:sonar'
                 }
             }
         }
@@ -38,8 +39,9 @@ pipeline {
                         timeout(time: 10, unit: 'MINUTES') {
                             waitForQualityGate abortPipeline: true
                         }
-                    } catch (Exception ex) {
-                        // Handle exception if needed
+                    }
+                    catch (Exception ex) {
+
                     }
                 }
             }
@@ -48,13 +50,42 @@ pipeline {
         stage('Push') {
             steps {
                 echo 'Push'
-                sh "aws s3 cp target/sample-1.0.3.jar s3://bucket001306"
+
+              //  sh "aws s3 cp target/sample-1.0.3.jar s3://bermtecbatch31"
             }
         }
 
+        // Ci Ended
+
+        // CD Started
+
         stage('Deployments') {
             parallel {
+
                 stage('Deploy to Dev') {
                     steps {
-                        echo 'Deploy to Dev'
-                        sh "aws lambda update-function-code --
+                        echo 'Build'
+
+                        //sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
+                    }
+                }
+
+                stage('Deploy to test ') {
+                    when {
+                        branch 'main'
+                    }
+                    steps {
+                        echo 'Build'
+
+                        // sh "aws lambda update-function-code --function-name $function_name --region us-east-1 --s3-bucket bermtecbatch31 --s3-key sample-1.0.3.jar"
+                    }
+                }
+            }
+        }
+
+
+        
+
+        // CD Ended
+    }
+}
